@@ -13,20 +13,18 @@ class Legym():
         }
         self.user_id = data['id']
         self.real_name = data['realName']
-        print(self.real_name, end=' ')
         self.semester_id = get_semester_id(self.headers)
-        print(get_sign_up_statistics(self.headers))
+        stats = get_sign_up_statistics(self.headers)
+        print('{} [{}/{}/{}]'.format(self.real_name, stats['signedTimes'], stats['signedTimesNoGrade'], stats['totalTimes']))
 
     def activity_check_in(self):
-        print('- '+self.real_name)
         for item in get_current_activity_list(self.headers):
-            print('  - '+item['projectName']+' ['+str(item['times'])+']')
+            print('  - '+self.real_name+item['projectName']+' ['+str(item['times'])+']')
             if item['signType'] != 1 and time.time()*1000 < item['timeEnd']:
                 r = check_in(self.headers, self.user_id, item)
                 print('    '+r)
 
     def activity_sign_up(self, week, activities, cancel=False):
-        print('- '+self.real_name)
         if cancel:
             func = cancel_sign_up
         else:
@@ -36,5 +34,6 @@ class Legym():
             for item in self.items:
                 if activity in item['name']:
                     r = func(self.headers, item['id'])
-                    print('  - '+activity, r['data']['reason'])
+                    print('  - '+self.real_name, activity, r['data']['reason'])
                     break
+        return r['data']
