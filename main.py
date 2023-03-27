@@ -58,8 +58,9 @@ def signup_thread(user, week, activities, cancel):
 
 if __name__ == '__main__':
     paser = argparse.ArgumentParser()
-    paser.add_argument('action', help='Action (signup or checkin)')
+    paser.add_argument('action', help='signup or checkin')
     paser.add_argument('-e', '--endtime', help='end time for checkin loop')
+    paser.add_argument('-d', '--delay', help='script delay time', type=int, default=0)
     paser.add_argument('-c', '--cancel', help='whether to cancel signup', action='store_true')
     args = paser.parse_args()
     logger = Logger(args.action, absdir+'/log')
@@ -71,6 +72,10 @@ if __name__ == '__main__':
         elif len(args.endtime) != 4:
             print('wrong format for -e')
             exit(2)
+        if args.delay:
+            time.sleep(args.delay)
         checkin(args.endtime)
     elif args.action == 'signup':
+        if args.delay:
+            time.sleep(args.delay)
         signup(args.cancel)
