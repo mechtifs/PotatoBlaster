@@ -1,4 +1,4 @@
-from utils import signer, request_till_death
+from utils import sign, request_till_death
 
 
 base_url = 'https://cpes.legym.cn'
@@ -44,7 +44,7 @@ def check_in(headers, user_id, activity):
         'times': 1,
         'activityType': activity['courseActivityType'],
         'attainabilityType': activity['attainabilityType'],
-        'signDigital': signer(activity['courseActivityId']+str(activity['attainabilityType'])+user_id)
+        'signDigital': sign(activity['courseActivityId']+str(activity['attainabilityType'])+user_id)
     }
     r = request_till_death('PUT', base_url+'/education/activity/app/attainability/sign', headers=headers, json=json)
     return r.json()

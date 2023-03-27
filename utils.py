@@ -1,8 +1,25 @@
+import os
+import logging
 import requests
 from hashlib import sha1
+from logging.handlers import RotatingFileHandler
 
 
-def signer(str):
+class Logger:
+
+    def __init__(self, name, path):
+        file_path = path+'/'+name+'.log'
+        fmt = logging.Formatter('%(asctime)s\t%(message)s', '%H:%M:%S')
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(logging.INFO)
+        self.logger.addHandler(RotatingFileHandler(file_path, maxBytes=1024*1024*10, backupCount=5))
+        self.logger.handlers[0].setFormatter(fmt)
+        self.logger.propagate = False
+
+    def log(self, msg):
+        self.logger.info(msg)
+
+def sign(str: str):
     hex_digits = '0123456789abcdef'
     str += 'itauVfnexHiRigZ6'
     md = sha1(str.encode('utf-8')).digest()
@@ -26,9 +43,7 @@ def request_till_death(method, url, params=None, data=None, json=None, headers=N
                 r = requests.post(url, data=data, json=json, headers=headers)
             elif method == 'PUT':
                 r = requests.put(url, data=data, json=json, headers=headers)
-            elif method == 'DELETE':
-                r = requests.delete(url, params=params, headers=headers)
-            break
+            if r.status_code < 500:
+                return r
         except requests.exceptions.RequestException:
             pass
-    return r
