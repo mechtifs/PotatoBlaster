@@ -4,7 +4,7 @@ import time
 import argparse
 import threading
 from legym import Legym
-from utils import Logger
+from addons import Logger
 from datetime import datetime
 
 

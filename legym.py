@@ -8,6 +8,9 @@ class Legym():
     def __init__(self, info):
         self.username = info['username']
         self.password = info['password']
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        self.loop = asyncio.get_event_loop()
 
     async def login(self):
         data = await login(self.username, self.password)
@@ -38,24 +41,18 @@ class Legym():
                 return r
 
     def activity_checkin(self):
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.login())
-        items = loop.run_until_complete(get_current_activity_list(self.headers))
+        self.loop.run_until_complete(self.login())
+        items = self.loop.run_until_complete(get_current_activity_list(self.headers))
         tasks = [self.checkin_coro(item) for item in items]
-        result = loop.run_until_complete(asyncio.wait(tasks))
-        loop.close()
+        result = self.loop.run_until_complete(asyncio.wait(tasks))
+        self.loop.close()
         return [r.result() for r in result[0]]
 
     def activity_signup(self, week, activities, cancel=False):
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.login())
+        self.loop.run_until_complete(self.login())
         func = cancel_signup if cancel else signup
-        items = loop.run_until_complete(get_activity_list(self.headers, week))
+        items = self.loop.run_until_complete(get_activity_list(self.headers, week))
         tasks = [self.signup_coro(activity, func, items) for activity in activities]
-        result = loop.run_until_complete(asyncio.wait(tasks))
-        loop.close()
+        result = self.loop.run_until_complete(asyncio.wait(tasks))
+        self.loop.close()
         return [r.result() for r in result[0]]

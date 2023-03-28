@@ -1,4 +1,4 @@
-from utils import sign, request_till_death
+from addons import sign, request_till_death
 
 
 base_url = 'https://cpes.legym.cn'
