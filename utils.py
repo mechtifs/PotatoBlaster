@@ -1,7 +1,7 @@
 import aiohttp
 import logging
 from hashlib import sha1
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 
 
 class Logger:
@@ -11,7 +11,7 @@ class Logger:
         fmt = logging.Formatter('%(asctime)s\t%(message)s', '%H:%M:%S')
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.INFO)
-        self.logger.addHandler(RotatingFileHandler(file_path, maxBytes=1024*1024*10, backupCount=5))
+        self.logger.addHandler(TimedRotatingFileHandler(file_path, backupCount=5, when='MIDNIGHT', interval=1))
         self.logger.handlers[0].setFormatter(fmt)
         self.logger.propagate = False
 
