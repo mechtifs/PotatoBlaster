@@ -1,6 +1,5 @@
-import os
+import aiohttp
 import logging
-import requests
 from hashlib import sha1
 from logging.handlers import RotatingFileHandler
 
@@ -19,7 +18,7 @@ class Logger:
     def log(self, msg):
         self.logger.info(msg)
 
-def sign(str: str):
+async def sign(str):
     hex_digits = '0123456789abcdef'
     str += 'itauVfnexHiRigZ6'
     md = sha1(str.encode('utf-8')).digest()
@@ -34,16 +33,17 @@ def sign(str: str):
         k += 1
     return ''.join(buf)
 
-def request_till_death(method, url, params=None, data=None, json=None, headers=None):
+async def request_till_death(method, url, params=None, data=None, json=None, headers=None):
     while True:
-        try:
-            if method == 'GET':
-                r = requests.get(url, params=params, headers=headers)
-            elif method == 'POST':
-                r = requests.post(url, data=data, json=json, headers=headers)
-            elif method == 'PUT':
-                r = requests.put(url, data=data, json=json, headers=headers)
-            if r.status_code < 500:
-                return r
-        except requests.exceptions.RequestException:
-            pass
+        async with aiohttp.ClientSession() as session:
+            try:
+                if method == 'GET':
+                    r = await session.get(url, params=params, headers=headers)
+                elif method == 'POST':
+                    r = await session.post(url, data=data, json=json, headers=headers)
+                elif method == 'PUT':
+                    r = await session.put(url, data=data, json=json, headers=headers)
+                if r.status < 500:
+                    return await r.json()
+            except (aiohttp.ServerConnectionError, aiohttp.ServerDisconnectedError, aiohttp.ServerFingerprintMismatch, aiohttp.ServerTimeoutError):
+                pass

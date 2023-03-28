@@ -1,42 +1,61 @@
+import asyncio
 from api.base import login, get_semester_id
-from api.activity import get_activity_list, sign_up, cancel_sign_up, get_current_activity_list, check_in, get_sign_up_statistics
+from api.activity import get_activity_list, signup, cancel_signup, get_current_activity_list, checkin, get_signup_statistics
 
 
 class Legym():
 
     def __init__(self, info):
-        data = login(info['username'], info['password'])
+        self.username = info['username']
+        self.password = info['password']
+
+    async def login(self):
+        data = await login(self.username, self.password)
         self.headers = {
             'Authorization': 'Bearer '+data['accessToken'],
             'Organization': data['schoolId']
         }
         self.user_id = data['id']
         self.real_name = data['realName']
-        self.semester_id = get_semester_id(self.headers)
-        stats = get_sign_up_statistics(self.headers)
+        self.semester_id = await get_semester_id(self.headers)
+        stats = await get_signup_statistics(self.headers)
         print('{} [{}/{}/{}]'.format(self.real_name, stats['signedTimes'], stats['signedTimesNoGrade'], stats['totalTimes']))
 
-    def activity_check_in(self):
-        ret = []
-        for item in get_current_activity_list(self.headers):
-            print('  - {}\t{} [{}]'.format(self.real_name, item['projectName'], item['times']))
-            if item['signType'] != 1:
-                r = check_in(self.headers, self.user_id, item)
-                print('    '+str(r))
-                r['activity'] = item['projectName']
-                ret.append(r)
-        return ret
+    async def checkin_coro(self, item):
+        print('  - {}\t{} [{}]'.format(self.real_name, item['projectName'], item['times']))
+        if item['signType'] != 1:
+            r = await checkin(self.headers, self.user_id, item)
+            print('    '+str(r))
+            r['activity'] = item['projectName']
+            return r
 
-    def activity_sign_up(self, week, activities, cancel=False):
-        if cancel:
-            func = cancel_sign_up
-        else:
-            func = sign_up
-        self.items = get_activity_list(self.headers, week)
-        for activity in activities:
-            for item in self.items:
-                if activity in item['name']:
-                    r = func(self.headers, item['id'])
-                    print('  - '+self.real_name, activity, r['data']['reason'])
-                    break
-        return r['data']
+    async def signup_coro(self, activity, func, items):
+        for item in items:
+            if activity in item['name']:
+                r = await func(self.headers, item['id'])
+                print('  - '+self.real_name, activity, r['data']['reason'])
+                r['activity'] = item['name']
+                return r
+
+    def activity_checkin(self):
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.login())
+        items = loop.run_until_complete(get_current_activity_list(self.headers))
+        tasks = [self.checkin_coro(item) for item in items]
+        result = loop.run_until_complete(asyncio.wait(tasks))
+        loop.close()
+        return [r.result() for r in result[0]]
+
+    def activity_signup(self, week, activities, cancel=False):
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.login())
+        func = cancel_signup if cancel else signup
+        items = loop.run_until_complete(get_activity_list(self.headers, week))
+        tasks = [self.signup_coro(activity, func, items) for activity in activities]
+        result = loop.run_until_complete(asyncio.wait(tasks))
+        loop.close()
+        return [r.result() for r in result[0]]

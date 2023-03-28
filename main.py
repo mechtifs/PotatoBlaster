@@ -19,41 +19,58 @@ with open(absdir+'/activity_list.json', 'r') as f:
     activity_list = json.load(f)
 
 def checkin(endtime):
+    ts = []
     for k in activity_list[str(weekday+1)].keys():
         try:
-            threading.Thread(target=checkin_thread, args=(Legym(user_info[k]), endtime,)).start()
+            t = threading.Thread(target=checkin_thread, args=(Legym(user_info[k]), endtime,))
+            t.start()
+            ts.append(t)
         except Exception:
             print(k, 'wrong password')
             pass
+    for t in ts:
+        t.join()
 
 def signup(cancel=False):
     week = (weekday+2)%7
+    ts = []
     for k, v in activity_list[str(week)].items():
         try:
-            threading.Thread(target=signup_thread, args=(Legym(user_info[k]), week, v, cancel,)).start()
+            t = threading.Thread(target=signup_thread, args=(Legym(user_info[k]), week, v, cancel,))
+            t.start()
+            ts.append(t)
         except Exception:
             print(k, 'wrong password')
             pass
+    for t in ts:
+        t.join()
 
 def checkin_thread(user, endtime):
     starttime = datetime.now().strftime("%H%M")
     now = starttime
     while now >= starttime and now < endtime:
         try:
-            r = user.activity_check_in()
+            r = user.activity_checkin()
             for i in r:
-                logger.log(user.real_name+'\t'+str(i))
+                if i:
+                    logger.log(user.real_name+'\t'+str(i))
         except Exception:
             pass
         time.sleep(30)
         now = datetime.now().strftime("%H%M")
 
 def signup_thread(user, week, activities, cancel):
+    cnt = 0
     while True:
-        r = user.activity_sign_up(week, activities, cancel)
-        logger.log(user.real_name+'\t'+str(r))
-        if '成功' in r['reason'] or '上限' in r['reason']:
+        r = user.activity_signup(week, activities, cancel)
+        print(r)
+        for i in r:
+            logger.log(user.real_name+'\t'+str(i))
+            if '成功' in i['data']['reason'] or '上限' in i['data']['reason']:
+                cnt += 1
+        if cnt == len(r):
             break
+        cnt = 0
 
 
 if __name__ == '__main__':
