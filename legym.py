@@ -43,16 +43,14 @@ class Legym():
     def activity_checkin(self):
         self.loop.run_until_complete(self.login())
         items = self.loop.run_until_complete(get_current_activity_list(self.headers))
-        tasks = [self.checkin_coro(item) for item in items]
+        tasks = [self.loop.create_task(self.checkin_coro(item)) for item in items]
         result = self.loop.run_until_complete(asyncio.wait(tasks))
-        self.loop.close()
         return [r.result() for r in result[0]]
 
     def activity_signup(self, week, activities, cancel=False):
         self.loop.run_until_complete(self.login())
         func = cancel_signup if cancel else signup
         items = self.loop.run_until_complete(get_activity_list(self.headers, week))
-        tasks = [self.signup_coro(activity, func, items) for activity in activities]
+        tasks = [self.loop.create_task(self.signup_coro(activity, func, items)) for activity in activities]
         result = self.loop.run_until_complete(asyncio.wait(tasks))
-        self.loop.close()
         return [r.result() for r in result[0]]

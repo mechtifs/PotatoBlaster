@@ -1,4 +1,4 @@
-from addons import request_till_death
+from utils import request_till_death
 
 
 base_url = 'https://cpes.legym.cn'

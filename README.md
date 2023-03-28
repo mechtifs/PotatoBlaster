@@ -1,5 +1,9 @@
 # LegymAutomation
 
+## Requirements
+
+Python 3.10+
+
 ## Usage
 
 Fill in information in `user_info.json` and `activity_list.json` first.
