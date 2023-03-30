@@ -1,8 +1,8 @@
 import os
 import json
 import time
+import asyncio
 import argparse
-import threading
 from legym import Legym
 from utils import Logger
 from datetime import datetime
@@ -12,58 +12,38 @@ weekday = datetime.now().weekday()
 
 absdir = os.path.dirname(os.path.abspath(__file__))
 
+loop = asyncio.get_event_loop()
+
 with open(absdir+'/user_info.json', 'r') as f:
     user_info = json.load(f)
 
 with open(absdir+'/activity_list.json', 'r') as f:
     activity_list = json.load(f)
 
-def checkin(endtime):
-    ts = []
-    for k in activity_list[str(weekday+1)].keys():
-        try:
-            t = threading.Thread(target=checkin_thread, args=(Legym(user_info[k]), endtime,))
-            t.start()
-            ts.append(t)
-        except Exception:
-            print(k, 'wrong password')
-            pass
-    for t in ts:
-        t.join()
-
 def signup(cancel=False):
     week = (weekday+2)%7
-    ts = []
-    for k, v in activity_list[str(week)].items():
-        try:
-            t = threading.Thread(target=signup_thread, args=(Legym(user_info[k]), week, v, cancel,))
-            t.start()
-            ts.append(t)
-        except Exception:
-            print(k, 'wrong password')
-            pass
-    for t in ts:
-        t.join()
+    week = 5
+    try:
+        tasks = [signup_coro(Legym(user_info[k]), week, v, cancel) for k, v in activity_list[str(week)].items()]
+        loop.run_until_complete(asyncio.wait(tasks))
+    except Exception:
+        pass
 
-def checkin_thread(user, endtime):
-    starttime = datetime.now().strftime("%H%M")
-    now = starttime
-    while now >= starttime and now < endtime:
-        try:
-            r = user.activity_checkin()
-            for i in r:
-                if i:
-                    logger.log(user.real_name+'\t'+str(i))
-        except Exception:
-            pass
-        time.sleep(30)
-        now = datetime.now().strftime("%H%M")
+def checkin(endtime):
+    try:
+        tasks = [checkin_coro(Legym(user_info[k]), endtime) for k in activity_list[str(weekday+1)].keys()]
+        loop.run_until_complete(asyncio.wait(tasks))
+    except Exception:
+        pass
 
-def signup_thread(user, week, activities, cancel):
+async def signup_coro(user, week, activities, cancel):
+    r = await user.login()
+    if not r:
+        print('Login failed')
+        return
     cnt = 0
     while True:
-        r = user.activity_signup(week, activities, cancel)
-        print(r)
+        r = await user.activity_signup(week, activities, cancel)
         for i in r:
             logger.log(user.real_name+'\t'+str(i))
             if '成功' in i['data']['reason'] or '上限' in i['data']['reason']:
@@ -71,6 +51,24 @@ def signup_thread(user, week, activities, cancel):
         if cnt == len(r):
             break
         cnt = 0
+
+async def checkin_coro(user, endtime):
+    r = await user.login()
+    if not r:
+        print('Login failed')
+        return
+    starttime = datetime.now().strftime("%H%M")
+    now = starttime
+    while now >= starttime and now < endtime:
+        try:
+            r = await user.activity_checkin()
+            for i in r:
+                if i:
+                    logger.log(user.real_name+'\t'+str(i))
+        except Exception:
+            pass
+        await asyncio.sleep(30)
+        now = datetime.now().strftime("%H%M")
 
 
 if __name__ == '__main__':
