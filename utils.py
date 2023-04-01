@@ -8,7 +8,7 @@ class Logger:
 
     def __init__(self, name, path):
         file_path = path+'/'+name+'.log'
-        fmt = logging.Formatter('%(asctime)s\t%(message)s', '%H:%M:%S')
+        fmt = logging.Formatter('%(asctime)s %(message)s', '%H:%M:%S')
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(TimedRotatingFileHandler(file_path, backupCount=5, when='MIDNIGHT', interval=1))

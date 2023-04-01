@@ -17,17 +17,17 @@ class Legym():
             'Organization': data['schoolId']
         }
         self.user_id = data['id']
-        self.real_name = data['realName']
+        self.student_id = data['organizationUserNumber']
         self.semester_id = await get_semester_id(self.headers)
         stats = await get_signup_statistics(self.headers)
-        print('{} [{}/{}/{}]'.format(self.real_name, stats['signedTimes'], stats['signedTimesNoGrade'], stats['totalTimes']))
+        print('{} [{}/{}/{}]'.format(self.student_id, stats['signedTimes'], stats['signedTimesNoGrade'], stats['totalTimes']))
         return self.user_id
 
     async def activity_checkin(self):
         res = []
         items = await get_current_activity_list(self.headers)
         for item in items:
-            print('  - {}\t{} [{}]'.format(self.real_name, item['projectName'], item['times']))
+            print('  - {} {} [{}]'.format(self.student_id, item['projectName'], item['times']))
             if item['signType'] != 1:
                 r = await checkin(self.headers, self.user_id, item)
                 print('    '+str(r))
@@ -43,7 +43,7 @@ class Legym():
             for item in items:
                 if activity in item['name']:
                     r = await func(self.headers, item['id'])
-                    print('  - '+self.real_name, activity, r['data']['reason'])
+                    print('  - '+self.student_id, activity, r['data']['reason'])
                     r['activity'] = item['name']
                     res.append(r)
         return res
