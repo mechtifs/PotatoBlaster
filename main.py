@@ -1,6 +1,5 @@
 import os
 import json
-import time
 import asyncio
 import argparse
 from legym import Legym
@@ -11,7 +10,7 @@ from datetime import datetime
 def signup(cancel=False):
     week = (weekday+2)%7
     try:
-        tasks = [[signup_coro(Legym(user_info[j]), week, i[1], cancel) for j in i[0]] for i in [(a['users'], a['activities']) for a in activity_list[str(week)]]][0]
+        tasks = [[loop.create_task(signup_coro(Legym(user_info[j]), week, i['activities'], cancel)) for j in i['users']] for i in activity_list[str(week)]][0]
         loop.run_until_complete(asyncio.wait(tasks))
     except Exception:
         pass
@@ -19,7 +18,7 @@ def signup(cancel=False):
 def checkin(endtime):
     week = (weekday+1)%7
     try:
-        tasks = [checkin_coro(Legym(user_info[j]), endtime) for i in [a['users'] for a in activity_list[str(week)]] for j in i]
+        tasks = [loop.create_task(checkin_coro(Legym(user_info[j]), endtime)) for i in [a['users'] for a in activity_list[str(week)]] for j in i]
         loop.run_until_complete(asyncio.wait(tasks))
     except Exception:
         pass
