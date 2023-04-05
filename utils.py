@@ -43,7 +43,7 @@ async def request_till_death(method, url, params=None, data=None, json=None, hea
                     r = await session.post(url, data=data, json=json, headers=headers)
                 elif method == 'PUT':
                     r = await session.put(url, data=data, json=json, headers=headers)
-                if r.status < 500:
+                if r.status == 200:
                     return await r.json()
-            except (aiohttp.ServerConnectionError, aiohttp.ServerDisconnectedError, aiohttp.ServerFingerprintMismatch, aiohttp.ServerTimeoutError):
+            except Exception:
                 pass

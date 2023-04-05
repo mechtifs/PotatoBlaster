@@ -21,7 +21,7 @@ class Legym():
         self.semester_id = await get_semester_id(self.headers)
         stats = await get_signup_statistics(self.headers)
         print('{} [{}/{}/{}]'.format(self.student_id, stats['signedTimes'], stats['signedTimesNoGrade'], stats['totalTimes']))
-        return self.user_id
+        return data
 
     async def activity_checkin(self):
         res = []
