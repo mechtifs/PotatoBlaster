@@ -18,6 +18,9 @@ class Logger:
     def log(self, msg):
         self.logger.info(msg)
 
+class TokenExpired(Exception):
+    pass
+
 async def sign(str):
     hex_digits = '0123456789abcdef'
     str += 'itauVfnexHiRigZ6'
@@ -33,17 +36,20 @@ async def sign(str):
         k += 1
     return ''.join(buf)
 
-async def request_till_death(method, url, params=None, data=None, json=None, headers=None):
+async def request_till_death(method, url, **kwargs):
     while True:
-        async with aiohttp.ClientSession() as session:
-            try:
-                if method == 'GET':
-                    r = await session.get(url, params=params, headers=headers)
-                elif method == 'POST':
-                    r = await session.post(url, data=data, json=json, headers=headers)
-                elif method == 'PUT':
-                    r = await session.put(url, data=data, json=json, headers=headers)
-                if r.status == 200:
-                    return await r.json()
-            except Exception:
-                pass
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.request(method, url, **kwargs) as r:
+                    result = await r.json()
+                    if r.status == 200 or r.status == 400:
+                        return result
+                    elif r.status == 401:
+                        raise TokenExpired('Token expired when requesting '+url)
+                    else:
+                        print(r.status)
+                        print(kwargs['json'])
+                        print(result)
+        except Exception as e:
+            if isinstance(e, TokenExpired):
+                raise e
