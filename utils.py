@@ -18,38 +18,13 @@ class Logger:
     def log(self, msg):
         self.logger.info(msg)
 
-class TokenExpired(Exception):
-    pass
-
-async def sign(str):
-    hex_digits = '0123456789abcdef'
-    str += 'itauVfnexHiRigZ6'
-    md = sha1(str.encode('utf-8')).digest()
-    j = len(md)
-    buf = [0]*(j*2)
-    k = 0
-    for i in range(j):
-        byte0 = md[i]
-        buf[k] = hex_digits[byte0>>4&0xf]
-        k += 1
-        buf[k] = hex_digits[byte0&0xf]
-        k += 1
-    return ''.join(buf)
+def sign(text):
+    md = sha1((text+'itauVfnexHiRigZ6').encode('utf-8')).digest()
+    return ''.join(['{:x}{:x}'.format(md[i]>>4&0xf, md[i]&0xf) for i in range(len(md))])
 
 async def request_till_death(method, url, **kwargs):
     while True:
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.request(method, url, **kwargs) as r:
-                    result = await r.json()
-                    if r.status == 200 or r.status == 400:
-                        return result
-                    elif r.status == 401:
-                        raise TokenExpired('Token expired when requesting '+url)
-                    else:
-                        print(r.status)
-                        print(kwargs['json'])
-                        print(result)
-        except Exception as e:
-            if isinstance(e, TokenExpired):
-                raise e
+        async with aiohttp.ClientSession() as session:
+            async with session.request(method, url, **kwargs) as r:
+                if r.status < 500:
+                    return await r.json()

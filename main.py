@@ -20,8 +20,7 @@ def checkin(endtime):
 async def signup_coro(user, week, activities, cancel):
     r = await user.login()
     if not r:
-        errlogger.log('Login failed')
-        return
+        raise Exception('Login failed')
     await asyncio.sleep(args.delay)
     cnt = 0
     while True:
@@ -38,13 +37,13 @@ async def signup_coro(user, week, activities, cancel):
         except Exception as e:
             print(e)
             errlogger.log(str(e))
+            print('retrying...')
             await user.login()
 
 async def checkin_coro(user, endtime):
     r = await user.login()
     if not r:
-        errlogger.log('Login failed')
-        return
+        raise Exception('Login failed')
     await asyncio.sleep(args.delay)
     starttime = datetime.now().strftime("%H%M")
     now = starttime
@@ -59,6 +58,7 @@ async def checkin_coro(user, endtime):
         except Exception as e:
             print(e)
             errlogger.log(str(e))
+            print('retrying...')
             await user.login()
 
 
