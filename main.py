@@ -7,9 +7,9 @@ from utils import Logger
 from datetime import datetime
 
 
-def signup(cancel=False):
+def signup(endtime, cancel=False):
     week = (weekday+2)%7
-    tasks = [[loop.create_task(signup_coro(Legym(user_info[j]), week, i['activities'], cancel)) for j in i['users']] for i in activity_list[str(week)]][0]
+    tasks = [[loop.create_task(signup_coro(Legym(user_info[j]), week, i['activities'], cancel, endtime)) for j in i['users']] for i in activity_list[str(week)]][0]
     loop.run_until_complete(asyncio.wait(tasks))
 
 def checkin(endtime):
@@ -17,13 +17,15 @@ def checkin(endtime):
     tasks = [loop.create_task(checkin_coro(Legym(user_info[j]), endtime)) for i in [a['users'] for a in activity_list[str(week)]] for j in i]
     loop.run_until_complete(asyncio.wait(tasks))
 
-async def signup_coro(user, week, activities, cancel):
+async def signup_coro(user, week, activities, cancel, endtime):
     r = await user.login()
     if not r:
         raise Exception('Login failed')
     await asyncio.sleep(args.delay)
     cnt = 0
-    while True:
+    starttime = datetime.now().strftime("%H%M")
+    now = starttime
+    while now >= starttime and now < endtime:
         try:
             r = await user.activity_signup(week, activities, cancel)
             for i in r:
@@ -65,9 +67,9 @@ async def checkin_coro(user, endtime):
 if __name__ == '__main__':
     paser = argparse.ArgumentParser()
     paser.add_argument('action', help='signup or checkin')
-    paser.add_argument('-e', '--endtime', help='end time for checkin loop')
-    paser.add_argument('-d', '--delay', help='script delay time', type=int, default=0)
-    paser.add_argument('-c', '--cancel', help='whether to cancel signup', action='store_true')
+    paser.add_argument('-e', '--endtime', help='end time for an action loop (0000-2400)')
+    paser.add_argument('-d', '--delay', help='script delay time (in seconds)', type=int, default=0)
+    paser.add_argument('-c', '--cancel', help='cancel signup', action='store_true')
     args = paser.parse_args()
 
     weekday = datetime.now().weekday()
@@ -81,13 +83,22 @@ if __name__ == '__main__':
     with open(absdir+'/activity_list.json', 'r') as f:
         activity_list = json.load(f)
 
+    if args.endtime:
+        if len(args.endtime) != 4:
+            print('wrong format for -e')
+            os._exit(2)
+        try:
+            t = int(args.endtime)
+            if t < 0 or t > 2400:
+                print('invalid time for -e')
+                os._exit(2)
+        except:
+            print('wrong format for -e')
+            os._exit(2)
     if args.action == 'checkin':
         if not args.endtime:
             print('please specify -e')
-            exit(2)
-        elif len(args.endtime) != 4:
-            print('wrong format for -e')
-            exit(2)
+            os._exit(2)
         checkin(args.endtime)
     elif args.action == 'signup':
-        signup(args.cancel)
+        signup(args.endtime if args.endtime else '2400', args.cancel)

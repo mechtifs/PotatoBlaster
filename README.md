@@ -1,9 +1,5 @@
 # LegymAutomation
 
-## Requirements
-
-Python 3.10+
-
 ## Usage
 
 Fill in information in `user_info.json` and `activity_list.json` first.
@@ -17,10 +13,10 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -e ENDTIME, --endtime ENDTIME
-                        end time for checkin loop
+                        end time for an action loop (0000-2400)
   -d DELAY, --delay DELAY
-                        script delay time
-  -c, --cancel          whether to cancel signup
+                        script delay time (in seconds)
+  -c, --cancel          cancel signup
 ```
 
 ## Acknowledgement
