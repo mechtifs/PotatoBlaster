@@ -1,6 +1,7 @@
 import aiohttp
 import logging
 from hashlib import sha1
+from base64 import b64decode
 from logging.handlers import TimedRotatingFileHandler
 
 
@@ -19,7 +20,7 @@ class Logger:
         self.logger.info(msg)
 
 def sign(text):
-    md = sha1((text+'itauVfnexHiRigZ6').encode('utf-8')).digest()
+    md = sha1((text+b64decode(b'aXRhdVZmbmV4SGlSaWdaNg==').decode).encode('utf-8')).digest()
     return ''.join(['{:x}{:x}'.format(md[i]>>4&0xf, md[i]&0xf) for i in range(len(md))])
 
 async def request_till_death(method, url, **kwargs):

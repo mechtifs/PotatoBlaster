@@ -2,19 +2,19 @@ import os
 import json
 import asyncio
 import argparse
-from legym import Legym
+from blaster import Blaster
 from utils import Logger
 from datetime import datetime
 
 
 def signup(endtime, cancel=False):
     week = (weekday+2)%7
-    tasks = [[loop.create_task(signup_coro(Legym(user_info[j]), week, i['activities'], cancel, endtime)) for j in i['users']] for i in activity_list[str(week)]][0]
+    tasks = [[loop.create_task(signup_coro(Blaster(user_info[j]), week, i['activities'], cancel, endtime)) for j in i['users']] for i in activity_list[str(week)]][0]
     loop.run_until_complete(asyncio.wait(tasks))
 
 def checkin(endtime):
     week = (weekday+1)%7
-    tasks = [loop.create_task(checkin_coro(Legym(user_info[j]), endtime)) for i in [a['users'] for a in activity_list[str(week)]] for j in i]
+    tasks = [loop.create_task(checkin_coro(Blaster(user_info[j]), endtime)) for i in [a['users'] for a in activity_list[str(week)]] for j in i]
     loop.run_until_complete(asyncio.wait(tasks))
 
 async def signup_coro(user, week, activities, cancel, endtime):

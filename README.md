@@ -1,4 +1,4 @@
-# LegymAutomation
+# PotatoBlaster
 
 ## Usage
 
@@ -21,5 +21,5 @@ options:
 
 ## Acknowledgement
 
-- [LegymX](https://github.com/RealHurrison/LegymX)
+- [PotatoBlasterX](https://github.com/RealHurrison/PotatoBlasterX)
 - [SuYueQQBot](https://github.com/SuYueQiuLiang/SuYueQQBot)

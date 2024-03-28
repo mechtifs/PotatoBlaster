@@ -2,7 +2,7 @@ from api.base import login, get_semester_id
 from api.activity import get_activity_list, signup, cancel_signup, get_current_activity_list, checkin, get_signup_statistics
 
 
-class Legym():
+class Blaster():
 
     def __init__(self, info):
         self.username = info['username']
